@@ -582,13 +582,21 @@ yarn install
 yarn example start
 ```
 
-And in a new terminal window/pane:
+And in a new terminal window/pane (for iOS / Android):
 
 ```bash
 yarn example ios
 # or
 yarn example android
 ```
+
+**OR** for AppleTV / Android TV
+```bash
+yarn exampletv ios
+# or
+yarn exampletv android
+```
+
 
 **OR** open the `./example/ios` folder in XCode, or the `./example/android` folder in Android Studio and run the app on a simulator or physical device.
 
