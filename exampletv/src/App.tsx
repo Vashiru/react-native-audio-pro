@@ -10,7 +10,6 @@ import {
 	View,
 } from 'react-native';
 
-import Slider from '@react-native-community/slider';
 import { AudioPro, AudioProState, type AudioProTrack, useAudioPro } from 'react-native-audio-pro';
 
 import {
@@ -25,10 +24,22 @@ import { formatTime, getStateColor } from './utils';
 
 export default function App() {
 	const [currentIndex, setLocalIndex] = useState(getCurrentTrackIndex());
-	const [progressInterval, setLocalProgressInterval] = useState(getProgressInterval());
+	const [progressInterval, setLocalProgressInterval] = useState(
+		getProgressInterval(),
+	);
 	const currentTrack = playlist[currentIndex];
-	const { position, duration, state, playingTrack, playbackSpeed, volume, error } = useAudioPro();
-	const [ambientState, setAmbientState] = useState<'stopped' | 'playing' | 'paused'>('stopped');
+	const {
+		position,
+		duration,
+		state,
+		playingTrack,
+		playbackSpeed,
+		volume,
+		error,
+	} = useAudioPro();
+	const [ambientState, setAmbientState] = useState<
+		'stopped' | 'playing' | 'paused'
+	>('stopped');
 
 	// Sync the local index with the player service
 	useEffect(() => {
@@ -54,7 +65,7 @@ export default function App() {
 	// Set up ambient audio event listeners
 	useEffect(() => {
 		// Add ambient audio event listeners
-		const ambientListener = AudioPro.addAmbientListener((event) => {
+		const ambientListener = AudioPro.addAmbientListener(event => {
 			console.log('Ambient audio event:', event.type);
 
 			switch (event.type) {
@@ -120,10 +131,6 @@ export default function App() {
 		setNeedsTrackLoad(true);
 	};
 
-	const handleSeek = (value: number) => {
-		AudioPro.seekTo(value);
-	};
-
 	const handleSeekBack = () => {
 		AudioPro.seekBack();
 	};
@@ -138,13 +145,17 @@ export default function App() {
 			AudioPro.seekTo(0);
 		} else {
 			// Otherwise, go to previous track
-			const newIndex = currentIndex > 0 ? currentIndex - 1 : playlist.length - 1;
+			const newIndex =
+				currentIndex > 0 ? currentIndex - 1 : playlist.length - 1;
 
 			// Update the track index
 			updateCurrentIndex(newIndex);
 
 			// If we're currently playing or paused (but loaded), immediately load the new track
-			if (state === AudioProState.PLAYING || state === AudioProState.PAUSED) {
+			if (
+				state === AudioProState.PLAYING ||
+				state === AudioProState.PAUSED
+			) {
 				AudioPro.play(playlist[newIndex] as AudioProTrack, {
 					autoPlay,
 				});
@@ -240,19 +251,25 @@ export default function App() {
 				contentContainerStyle={styles.scrollContent}
 				showsVerticalScrollIndicator={false}
 			>
-				<Image
-					source={
-						typeof currentTrack.artwork === 'number'
-							? currentTrack.artwork
-							: { uri: currentTrack.artwork }
-					}
-					style={styles.artwork}
-				/>
-				<Text style={styles.title}>{currentTrack.title}</Text>
-				<Text style={styles.artist}>{currentTrack.artist}</Text>
-				<View style={styles.sliderContainer}>
-					<Text style={styles.timeText}>{formatTime(position)}</Text>
-					<Slider
+				<View style={styles.mainContainer}>
+					<View style={styles.leftColumn}>
+						<Image
+							source={
+								typeof currentTrack.artwork === 'number'
+									? currentTrack.artwork
+									: { uri: currentTrack.artwork }
+							}
+							style={styles.artwork}
+						/>
+						<Text style={styles.title}>{currentTrack.title}</Text>
+						<Text style={styles.artist}>{currentTrack.artist}</Text>
+					</View>
+					<View style={styles.rightColumn}>
+						<View style={styles.sliderContainer}>
+							<Text style={styles.timeText}>
+								{formatTime(position)}
+							</Text>
+							{/* <Slider
 						style={styles.slider}
 						minimumValue={0}
 						maximumValue={duration}
@@ -261,121 +278,164 @@ export default function App() {
 						maximumTrackTintColor="#8E8E93"
 						thumbTintColor="#1EB1FC"
 						onSlidingComplete={handleSeek}
-					/>
-					<Text style={styles.timeText}>
-						{formatTime(Math.max(0, duration - position))}
-					</Text>
-				</View>
-				<View style={styles.controlsRow}>
-					<TouchableOpacity onPress={handlePrevious}>
-						<Text style={styles.controlText}>prev</Text>
-					</TouchableOpacity>
-					{state === AudioProState.LOADING ? (
-						<View style={styles.loadingContainer}>
-							<ActivityIndicator size="large" color="#1EB1FC" />
+					/> */}
+							<Text style={styles.timeText}>
+								{formatTime(Math.max(0, duration - position))}
+							</Text>
 						</View>
-					) : (
-						<TouchableOpacity onPress={handlePlayPause}>
-							<Text style={styles.playPauseText}>
-								{state === AudioProState.PLAYING
-									? 'pause()'
-									: state === AudioProState.PAUSED && !needsTrackLoad
-										? 'resume()'
-										: 'play(track)'}
-							</Text>
-						</TouchableOpacity>
-					)}
-					<TouchableOpacity onPress={handleNext}>
-						<Text style={styles.controlText}>next</Text>
-					</TouchableOpacity>
-				</View>
-				<View style={styles.seekRow}>
-					<TouchableOpacity onPress={handleSeekBack}>
-						<Text style={styles.controlText}>-30s</Text>
-					</TouchableOpacity>
-					<TouchableOpacity onPress={handleSeekForward}>
-						<Text style={styles.controlText}>+30s</Text>
-					</TouchableOpacity>
-				</View>
-				<View style={styles.speedRow}>
-					<TouchableOpacity onPress={handleDecreaseSpeed}>
-						<Text style={styles.controlText}>-</Text>
-					</TouchableOpacity>
-					<Text style={styles.speedText}>Speed: {playbackSpeed}x</Text>
-					<TouchableOpacity onPress={handleIncreaseSpeed}>
-						<Text style={styles.controlText}>+</Text>
-					</TouchableOpacity>
-				</View>
-				<View style={styles.generalRow}>
-					<View style={styles.speedRow}>
-						<TouchableOpacity onPress={handleDecreaseVolume}>
-							<Text style={styles.controlText}>-</Text>
-						</TouchableOpacity>
-						<Text style={styles.speedText}>Vol: {Math.round(volume * 100)}%</Text>
-						<TouchableOpacity onPress={handleIncreaseVolume}>
-							<Text style={styles.controlText}>+</Text>
-						</TouchableOpacity>
-					</View>
-					<View style={styles.speedRow}>
-						<TouchableOpacity onPress={handleDecreaseProgressInterval}>
-							<Text style={styles.controlText}>-</Text>
-						</TouchableOpacity>
-						<Text style={styles.speedText}>Prog: {progressInterval}ms</Text>
-						<TouchableOpacity onPress={handleIncreaseProgressInterval}>
-							<Text style={styles.controlText}>+</Text>
-						</TouchableOpacity>
-					</View>
-				</View>
-				<View style={styles.stopRow}>
-					<TouchableOpacity onPress={handleStop}>
-						<Text style={styles.controlText}>stop()</Text>
-					</TouchableOpacity>
-					<TouchableOpacity onPress={handleClear}>
-						<Text style={styles.controlText}>clear()</Text>
-					</TouchableOpacity>
-				</View>
-
-				<View style={styles.stopRow}>
-					<TouchableOpacity onPress={() => setAutoPlay(!autoPlay)}>
-						<Text style={styles.optionText}>
-							autoPlay: {/* eslint-disable-next-line react-native/no-inline-styles */}
-							<Text style={{ color: autoPlay ? '#90EE90' : '#FFA500' }}>
-								{autoPlay ? 'true' : 'false'}
-							</Text>
-						</Text>
-					</TouchableOpacity>
-					<Text style={styles.stateText}>
-						state: <Text style={{ color: getStateColor(state) }}>{state}</Text>
-					</Text>
-				</View>
-
-				<View style={styles.ambientSection}>
-					<Text style={styles.sectionTitle}>Ambient Audio</Text>
-					<View style={styles.stopRow}>
-						{ambientState === 'stopped' ? (
-							<TouchableOpacity onPress={handleAmbientPlay}>
-								<Text style={styles.controlText}>ambientPlay()</Text>
+						<View style={styles.controlsRow}>
+							<TouchableOpacity onPress={handlePrevious}>
+								<Text style={styles.controlText}>prev</Text>
 							</TouchableOpacity>
-						) : (
-							<TouchableOpacity onPress={handleAmbientTogglePause}>
-								<Text style={styles.controlText}>
-									{ambientState === 'playing'
-										? 'ambientPause()'
-										: 'ambientResume()'}
+							{state === AudioProState.LOADING ? (
+								<View style={styles.loadingContainer}>
+									<ActivityIndicator
+										size="large"
+										color="#1EB1FC"
+									/>
+								</View>
+							) : (
+								<TouchableOpacity onPress={handlePlayPause}>
+									<Text style={styles.playPauseText}>
+										{state === AudioProState.PLAYING
+											? 'pause()'
+											: state === AudioProState.PAUSED &&
+											  !needsTrackLoad
+											? 'resume()'
+											: 'play(track)'}
+									</Text>
+								</TouchableOpacity>
+							)}
+							<TouchableOpacity onPress={handleNext}>
+								<Text style={styles.controlText}>next</Text>
+							</TouchableOpacity>
+						</View>
+						<View style={styles.seekRow}>
+							<TouchableOpacity onPress={handleSeekBack}>
+								<Text style={styles.controlText}>-30s</Text>
+							</TouchableOpacity>
+							<TouchableOpacity onPress={handleSeekForward}>
+								<Text style={styles.controlText}>+30s</Text>
+							</TouchableOpacity>
+						</View>
+						<View style={styles.speedRow}>
+							<TouchableOpacity onPress={handleDecreaseSpeed}>
+								<Text style={styles.controlText}>-</Text>
+							</TouchableOpacity>
+							<Text style={styles.speedText}>
+								Speed: {playbackSpeed}x
+							</Text>
+							<TouchableOpacity onPress={handleIncreaseSpeed}>
+								<Text style={styles.controlText}>+</Text>
+							</TouchableOpacity>
+						</View>
+						<View style={styles.generalRow}>
+							<View style={styles.speedRow}>
+								<TouchableOpacity
+									onPress={handleDecreaseVolume}
+								>
+									<Text style={styles.controlText}>-</Text>
+								</TouchableOpacity>
+								<Text style={styles.speedText}>
+									Vol: {Math.round(volume * 100)}%
+								</Text>
+								<TouchableOpacity
+									onPress={handleIncreaseVolume}
+								>
+									<Text style={styles.controlText}>+</Text>
+								</TouchableOpacity>
+							</View>
+							<View style={styles.speedRow}>
+								<TouchableOpacity
+									onPress={handleDecreaseProgressInterval}
+								>
+									<Text style={styles.controlText}>-</Text>
+								</TouchableOpacity>
+								<Text style={styles.speedText}>
+									Prog: {progressInterval}ms
+								</Text>
+								<TouchableOpacity
+									onPress={handleIncreaseProgressInterval}
+								>
+									<Text style={styles.controlText}>+</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
+						<View style={styles.stopRow}>
+							<TouchableOpacity onPress={handleStop}>
+								<Text style={styles.controlText}>stop()</Text>
+							</TouchableOpacity>
+							<TouchableOpacity onPress={handleClear}>
+								<Text style={styles.controlText}>clear()</Text>
+							</TouchableOpacity>
+						</View>
+
+						<View style={styles.stopRow}>
+							<TouchableOpacity
+								onPress={() => setAutoPlay(!autoPlay)}
+							>
+								<Text style={styles.optionText}>
+									autoPlay:{' '}
+									<Text
+										style={
+											autoPlay
+												? styles.autoPlayTrueText
+												: styles.autoPlayFalseText
+										}
+									>
+										{autoPlay ? 'true' : 'false'}
+									</Text>
 								</Text>
 							</TouchableOpacity>
+							<Text style={styles.stateText}>
+								state:{' '}
+								<Text style={{ color: getStateColor(state) }}>
+									{state}
+								</Text>
+							</Text>
+						</View>
+
+						<View style={styles.ambientSection}>
+							<Text style={styles.sectionTitle}>
+								Ambient Audio
+							</Text>
+							<View style={styles.stopRow}>
+								{ambientState === 'stopped' ? (
+									<TouchableOpacity
+										onPress={handleAmbientPlay}
+									>
+										<Text style={styles.controlText}>
+											ambientPlay()
+										</Text>
+									</TouchableOpacity>
+								) : (
+									<TouchableOpacity
+										onPress={handleAmbientTogglePause}
+									>
+										<Text style={styles.controlText}>
+											{ambientState === 'playing'
+												? 'ambientPause()'
+												: 'ambientResume()'}
+										</Text>
+									</TouchableOpacity>
+								)}
+								<TouchableOpacity onPress={handleAmbientStop}>
+									<Text style={styles.controlText}>
+										ambientStop()
+									</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
+
+						{error && (
+							<View style={styles.errorContainer}>
+								<Text style={styles.errorText}>
+									Error: {error.error}
+								</Text>
+							</View>
 						)}
-						<TouchableOpacity onPress={handleAmbientStop}>
-							<Text style={styles.controlText}>ambientStop()</Text>
-						</TouchableOpacity>
 					</View>
 				</View>
-
-				{error && (
-					<View style={styles.errorContainer}>
-						<Text style={styles.errorText}>Error: {error.error}</Text>
-					</View>
-				)}
 			</ScrollView>
 		</SafeAreaView>
 	);

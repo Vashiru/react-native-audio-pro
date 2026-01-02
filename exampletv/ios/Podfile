@@ -1,0 +1,69 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+platform :tvos, "16.0"
+prepare_react_native_project!
+
+# Enable New Architecture (TurboModules) but keep Fabric disabled (use Paper renderer)
+ENV['RCT_NEW_ARCH_ENABLED'] = '1'
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+target 'AudioProExampleTV' do
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :fabric_enabled => false,
+    :hermes_enabled => true
+  )
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      # :ccache_enabled => true
+    )
+
+    # # Fix for react-native-tvos: Patch RCTThirdPartyComponentsProvider to handle missing Fabric components
+    # # Some third-party libraries may not have Fabric component views compiled/linked yet
+    # provider_path = File.join(__dir__, 'build/generated/ios/ReactCodegen/RCTThirdPartyComponentsProvider.mm')
+    # if File.exist?(provider_path)
+    #   provider_content = File.read(provider_path)
+
+    #   # Replace the literal dictionary @{ ... } with a mutable dictionary that filters out nil values
+    #   if provider_content.include?('thirdPartyComponents = @{')
+    #     # Find the dictionary block and replace it - need to handle multiline with tabs/newlines
+    #     patched_content = provider_content.gsub(
+    #       /thirdPartyComponents = @\{.*?\};/m,
+    #       'NSMutableDictionary<NSString *, Class<RCTComponentViewProtocol>> *components = [NSMutableDictionary new];
+
+    # Class sliderClass = NSClassFromString(@"RNCSliderComponentView");
+    # if (sliderClass) components[@"RNCSlider"] = sliderClass;
+
+    # Class safeAreaProviderClass = NSClassFromString(@"RNCSafeAreaProviderComponentView");
+    # if (safeAreaProviderClass) components[@"RNCSafeAreaProvider"] = safeAreaProviderClass;
+
+    # Class safeAreaViewClass = NSClassFromString(@"RNCSafeAreaViewComponentView");
+    # if (safeAreaViewClass) components[@"RNCSafeAreaView"] = safeAreaViewClass;
+
+    # thirdPartyComponents = [components copy];'
+    #     )
+
+    #     File.write(provider_path, patched_content)
+    #     Pod::UI.puts "✅ Patched RCTThirdPartyComponentsProvider.mm to filter out nil Fabric components".green
+    #   end
+    # end
+  end
+end

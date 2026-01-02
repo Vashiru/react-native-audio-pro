@@ -9,6 +9,7 @@
 	"module": "./lib/module/index.js",
 	"scripts": {
 		"example": "yarn workspace react-native-audio-pro-example",
+		"exampletv": "yarn workspace react-native-audio-pro-exampletv",
 		"test": "jest",
 		"check": "yarn lint && yarn typecheck && yarn prepare && yarn test",
 		"typecheck": "tsc",
@@ -120,8 +121,17 @@
 		"react": "*",
 		"react-native": "*"
 	},
+	"codegenConfig": {
+		"name": "AudioProSpec",
+		"type": "all",
+		"jsSrcsDir": "src",
+		"android": {
+			"javaPackageName": "dev.rnap.reactnativeaudiopro"
+		}
+	},
 	"workspaces": [
-		"example"
+		"example",
+		"exampletv"
 	],
 	"packageManager": "yarn@3.6.1",
 	"dependencies": {

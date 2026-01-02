@@ -44,9 +44,11 @@ android.iml
 # Cocoapods
 #
 example/ios/Pods
+exampletv/ios/Pods
 
 # Ruby
 example/vendor/
+exampletv/vendor/
 
 # node.js
 #
@@ -87,3 +89,4 @@ nitrogen/
 coverage
 ios/.build
 example/android/.kotlin
+exampletv/android/.kotlin
